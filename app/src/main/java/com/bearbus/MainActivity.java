@@ -8,7 +8,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;import android.app.Activity;
+import com.google.android.gms.maps.model.MarkerOptions;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.Menu;
@@ -31,85 +32,34 @@ import com.parse.PushService;
 import android.widget.TextView;
 import com.bearbus.R;
 
+import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 
-
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 
 public class MainActivity extends ActionBarActivity {
 
-    private final String PARSE_APP_ID = "Hr5DPwQzhmzzST1sNzME8ssu3zaDxRZgtLO10Zxk";
-    private final String PARSE_CLIENT_KEY = "49AgCaNyWzaFFCgHFPgS3NK0lEjTpLNPDDYBrswX";
+    //private GoogleMap map;
     ArrayList stops= new ArrayList();
     private Spinner spinner;
     private Spinner dropSpinner;
     private Button btnRequest;
-
-    private GoogleMap map;
+    private final String PARSE_APP_ID = "Hr5DPwQzhmzzST1sNzME8ssu3zaDxRZgtLO10Zxk";
+    private final String PARSE_CLIENT_KEY = "49AgCaNyWzaFFCgHFPgS3NK0lEjTpLNPDDYBrswX";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Parse.initialize(this, PARSE_APP_ID, PARSE_APP_ID);
-        PushService.setDefaultPushCallback(this, MainActivity.class);
-        //button
-        this.btnRequest = (Button) this.findViewById(R.id.request);
-        this.btnRequest.setOnClickListener(new View.OnClickListener() {
-
-            public void onClick(View view) {
-
-            }
-        });
-
-        List<String> SpinnerArray = new ArrayList<String>();
-        SpinnerArray.add("Parking Lot 3");
-        SpinnerArray.add("Parking Lot 11");
-        SpinnerArray.add("Parking Lot 35");
-        SpinnerArray.add("Recreation Center");
-        SpinnerArray.add("Meadow Brook Road");
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, SpinnerArray);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        Spinner spinner = (Spinner) findViewById(R.id.pspinner);
-        spinner.setAdapter(adapter);
-
-        ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, SpinnerArray);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        Spinner dspinner = (Spinner) findViewById(R.id.dspinner);
-        dropSpinner.setAdapter(adapter1);
-
-        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-
-            @Override
-            public void onItemSelected(AdapterView<?> arg0, View arg1,
-                                       int arg2, long arg3) {
-                // TODO Auto-generated method stub
-                Object item = arg0.getItemAtPosition(arg2);
-                if (item!=null) {
-                    Toast.makeText(MainActivity.this, item.toString(),
-                            Toast.LENGTH_SHORT).show();
-                }
-                Toast.makeText(MainActivity.this, "Selected",
-                        Toast.LENGTH_SHORT).show();
-
-            }
-
-
-
-
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0) {
-                // TODO Auto-generated method stub
-
-            }
-        });
-
 
         // Get a handle to the Map Fragment
-        map = ((SupportMapFragment) getSupportFragmentManager()
+        /*map = ((SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map)).getMap();
 
         // Set map options
@@ -164,23 +114,98 @@ public class MainActivity extends ActionBarActivity {
 
         map.addMarker(new MarkerOptions()
                 .position(new LatLng(42.674077, -83.213969))
-                .title("O'rena/Recreation Center"));
+                .title("O'rena/Recreation Center"));*/
+
+        PushService.setDefaultPushCallback(this, MainActivity.class);
+        //button
+        this.btnRequest = (Button) this.findViewById(R.id.request);
+        this.btnRequest.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View view) {
+
+            }
+        });
+
+        List<String> SpinnerArray = new ArrayList<String>();
+        SpinnerArray.add("Parking Lot 3");
+        SpinnerArray.add("Parking Lot 11");
+        SpinnerArray.add("Parking Lot 35/27");
+        SpinnerArray.add("O'rena/Recreation Center");
+        SpinnerArray.add("Meadow Brook Road");
+        SpinnerArray.add("Human Health Building");
+        SpinnerArray.add("Hamlin Circle");
+        SpinnerArray.add("Ann V. Nicholson 4000's");
+        SpinnerArray.add("Oakland Center/Wilson");
+        SpinnerArray.add("Extended Stay America (University Drive)");
+        SpinnerArray.add("Pawley/Varner");
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, SpinnerArray);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner[] spinner = {(Spinner) findViewById(R.id.pspinner)};
+        spinner[0].setAdapter(adapter);
+
+        ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, SpinnerArray);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        Spinner spinner2 = (Spinner) findViewById(R.id.dspinner);
+        spinner2.setAdapter(adapter1);
+
+        spinner[0].setOnItemSelectedListener(new OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View arg1,
+                                       int arg2, long arg3) {
+                // TODO Auto-generated method stub
+                Object item = arg0.getItemAtPosition(arg2);
+                if (item != null) {
+                    Toast.makeText(MainActivity.this, item.toString(),
+                            Toast.LENGTH_SHORT).show();
+                }
+                Toast.makeText(MainActivity.this, "Selected",
+                        Toast.LENGTH_SHORT).show();
+
+            }
 
 
-    }
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+                // TODO Auto-generated method stub
 
-    /*@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }*/
+            }
+        });
+
+        spinner2.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View arg1,
+                                       int arg2, long arg3) {
+                // TODO Auto-generated method stub
+                Object item = arg0.getItemAtPosition(arg2);
+                if (item!=null) {
+                    Toast.makeText(MainActivity.this, item.toString(),
+                            Toast.LENGTH_SHORT).show();
+                }
+                Toast.makeText(MainActivity.this, "Selected",
+                        Toast.LENGTH_SHORT).show();
+
+            }
 
 
 
-    public void addListenerOnSpinnerItemSelection() {
-        spinner = (Spinner) findViewById(R.id.pspinner);
-        dropSpinner = (Spinner) findViewById(R.id.dspinner);
-        spinner.setOnItemSelectedListener((AdapterView.OnItemSelectedListener) this);
+
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void addListenerOnSpinnerItemSelection() {
+                spinner[0] = (Spinner) findViewById(R.id.pspinner);
+                dropSpinner = (Spinner) findViewById(R.id.dspinner);
+                spinner[0].setOnItemSelectedListener((AdapterView.OnItemSelectedListener) this);
+            }
+        });
     }
 }
