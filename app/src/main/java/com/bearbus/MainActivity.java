@@ -76,7 +76,8 @@ public class MainActivity extends ActionBarActivity {
                             ParseApplication.stopTitles.add(object.getString("stopName"));
 
                             map.addMarker(new MarkerOptions()
-                                .position(new LatLng(location.getLatitude(), location.getLongitude())));
+                                .position(new LatLng(location.getLatitude(), location.getLongitude()))
+                                .title(bus.name));
                         }
 
                         final Spinner pickupSpinner = (Spinner) findViewById(R.id.pspinner);
