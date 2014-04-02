@@ -12,38 +12,34 @@
         class="com.google.android.gms.maps.SupportMapFragment" />
 
     <TextView
+        android:id="@+id/pickup_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/pickupLabel"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="199dp"/>
+        android:layout_below="@+id/map"
+        android:layout_margin="8dip"/>
 
     <Spinner
+        android:id="@+id/pspinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/pspinner"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="5dp"
-        android:layout_marginBottom="139dp" />
+        android:layout_below="@id/pickup_title"
+        android:layout_margin="4dip"/>
 
     <TextView
+        android:id="@+id/dropoff_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:text="@string/dropoffLabel"
-        android:layout_marginBottom="109dp"/>
+        android:layout_below="@id/pspinner"
+        android:layout_margin="8dip" />
 
     <Spinner
+        android:id="@+id/dspinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/dspinner"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="5dp"
-        android:layout_marginBottom="49dp" />
+        android:layout_below="@+id/dropoff_title"
+        android:layout_margin="4dip"/>
 
     <Button
         android:id="@+id/request"
