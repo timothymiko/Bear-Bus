@@ -5,11 +5,13 @@ package com.bearbus.Domain;
  */
 public class BusStop {
 
+    public String id;
     public String name;
     public double latitude;
     public double longitude;
 
-    public BusStop(String name, double latitude, double longitude) {
+    public BusStop(String id, String name, double latitude, double longitude) {
+        this.id = id;
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -17,6 +19,6 @@ public class BusStop {
 
     @Override
     public String toString() {
-        return "Name: " + this.name + " Location: " + latitude + ", " + longitude;
+        return "ID: " + this.id + " Name: " + this.name + " Location: " + latitude + ", " + longitude;
     }
 }
