@@ -2,6 +2,7 @@ package com.bearbus;
 
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -9,6 +10,7 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.bearbus.Domain.Bus;
 import com.bearbus.Domain.BusStop;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -153,7 +155,7 @@ public class MainActivity extends ActionBarActivity {
                 IDs.add(dropoffLocation.id);
 
                 ParseQuery<ParseObject> query = ParseQuery.getQuery("Routes");
-                query.whereEqualTo("dayOfWeek", Calendar.getInstance().get(Calendar.DAY_OF_WEEK));
+//                query.whereEqualTo("dayOfWeek", 1);
                 query.findInBackground(new FindCallback<ParseObject>() {
 
                     ArrayList<ParseObject> possibleBuses = new ArrayList<ParseObject>();
@@ -166,71 +168,61 @@ public class MainActivity extends ActionBarActivity {
                         int count;
                         boolean hasPickupLocation;
                         boolean hasDropoffLocation;
+                        boolean hasValidRoute = false;
+                        Bus selectedBus;
 
                         for (ParseObject object : parseObjects) {
-                            count = 0;
-                            hasPickupLocation = false;
-                            hasDropoffLocation = false;
-                            stopsForRoute = object.getJSONArray("stops");
 
-                            try {
-                                while (true) {
-                                    stop = stopsForRoute.getString(count);
-                                    if (stop.equals(pickupLocation.id))
-                                        hasPickupLocation = true;
-                                    else if (stop.equals(dropoffLocation.id))
-                                        hasDropoffLocation = true;
-                                    count++;
-                                }
 
-                            } catch (JSONException exception) {
-                                exception.printStackTrace();
-                            }
+                            if (object.getInt("dayOfWeek") == (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1)) {
 
-                            if (hasPickupLocation && hasDropoffLocation) {
-                                ParseQuery query = ParseQuery.getQuery("Bus");
+                                count = 0;
+                                hasPickupLocation = false;
+                                hasDropoffLocation = false;
+                                stopsForRoute = object.getJSONArray("stops");
+                                Log.d("parseObject", stopsForRoute.toString());
+
                                 try {
-                                    possibleBuses.add(query.get(object.getString("busID")));
-                                } catch (ParseException e2) {
-                                    e2.printStackTrace();
+                                    while (count < stopsForRoute.length()) {
+                                        stop = stopsForRoute.getString(count);
+                                        if (stop.equals(pickupLocation.id))
+                                            hasPickupLocation = true;
+                                        else if (stop.equals(dropoffLocation.id))
+                                            hasDropoffLocation = true;
+                                        count++;
+                                    }
+
+                                } catch (JSONException exception) {
+                                    exception.printStackTrace();
+                                }
+
+                                if (hasPickupLocation && hasDropoffLocation) {
+
+                                    ParseQuery busQuery = ParseQuery.getQuery("Bus");
+
+                                    try {
+                                        hasValidRoute = true;
+
+                                        ParseObject busObject = busQuery.get(object.getString("busID"));
+
+                                        ParseGeoPoint location = busObject.getParseGeoPoint("location");
+
+                                        selectedBus = new Bus(busObject.getObjectId(), busObject.getString("name"), location.getLatitude(), location.getLongitude(), busObject.getString("currentStop"), busObject.getString("nextStop"));
+
+                                        Log.d("query", "busObject: " + selectedBus.toString());
+
+                                        Toast.makeText(MainActivity.this, "Selected Bus: " + selectedBus.name, Toast.LENGTH_SHORT).show();
+
+                                        break;
+                                    } catch (ParseException e2) {
+                                        e2.printStackTrace();
+                                    }
                                 }
                             }
                         }
 
-                        double shortestLatitudeDelta = 999999999;
-                        double shortestLongitudeDelta = 999999999;
-                        String shortestBusID = "";
-
-
-                        for (ParseObject object : parseObjects) {
-                            try {
-
-                                ParseGeoPoint curStopLocation = ParseQuery.getQuery("BusStop").get(object.getString("currentStop")).getParseGeoPoint("location");
-//                                ParseGeoPoint nextStopLocation = ParseQuery.getQuery("BusStop").get(object.getString("nextStop")).getParseGeoPoint("location");
-
-                                double latitudeDelta = curStopLocation.getLatitude() - pickupLocation.latitude;
-                                double longitudeDelta = curStopLocation.getLatitude() - pickupLocation.longitude;
-
-                                boolean isCurStopClosest = (latitudeDelta < shortestLatitudeDelta) && (longitudeDelta < shortestLongitudeDelta);
-
-                                if (isCurStopClosest) {
-                                    shortestLatitudeDelta = latitudeDelta;
-                                    shortestLongitudeDelta = longitudeDelta;
-                                    shortestBusID = object.getObjectId();
-                                }
-
-                            } catch (ParseException e3) {
-                                e3.printStackTrace();
-                            }
-                        }
-
-                        try {
-                            ParseObject selectedBus = ParseQuery.getQuery("Bus").get(shortestBusID);
-                        } catch (ParseException e4) {
-                            e4.printStackTrace();
-                            Toast.makeText(MainActivity.this, "Error determing bus!", Toast.LENGTH_SHORT).show();
-                        }
-
+                        if (!hasValidRoute)
+                            Toast.makeText(MainActivity.this, "Not a valid route.", Toast.LENGTH_SHORT).show();
                     }
                 });
 
