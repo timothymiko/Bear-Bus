@@ -218,7 +218,7 @@ public class MainActivity extends ActionBarActivity {
                                             boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
 
                                             if (beforeStartTime || afterEndTime) {
-                                                Toast.makeText(MainActivity.this, "Buses are not currently operating.", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(MainActivity.this, "Inactive route", Toast.LENGTH_SHORT).show();
                                             } else {
                                                 Toast.makeText(MainActivity.this, "Selected Bus: " + selectedBus.name, Toast.LENGTH_SHORT).show();
                                                 break;
