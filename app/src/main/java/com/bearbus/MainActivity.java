@@ -171,8 +171,9 @@ public class MainActivity extends ActionBarActivity {
                         boolean hasValidRoute = false;
                         Bus selectedBus;
 
-                        for (ParseObject object : parseObjects) {
+                        for (int i = 0; i < parseObjects.size(); i++) {
 
+                            ParseObject object = parseObjects.get(i);
 
                             if (object.getInt("dayOfWeek") == (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1)) {
 
@@ -209,11 +210,24 @@ public class MainActivity extends ActionBarActivity {
 
                                         selectedBus = new Bus(busObject.getObjectId(), busObject.getString("name"), location.getLatitude(), location.getLongitude(), busObject.getString("currentStop"), busObject.getString("nextStop"));
 
-                                        Log.d("query", "busObject: " + selectedBus.toString());
+                                        JSONArray operationTime = object.getJSONArray("time");
 
-                                        Toast.makeText(MainActivity.this, "Selected Bus: " + selectedBus.name, Toast.LENGTH_SHORT).show();
+                                        try {
 
-                                        break;
+                                            boolean beforeStartTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < operationTime.getDouble(0);
+                                            boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+
+                                            if (beforeStartTime || afterEndTime) {
+                                                Toast.makeText(MainActivity.this, "Buses are not currently operating.", Toast.LENGTH_SHORT).show();
+                                            } else {
+                                                Toast.makeText(MainActivity.this, "Selected Bus: " + selectedBus.name, Toast.LENGTH_SHORT).show();
+                                                break;
+                                            }
+
+                                        } catch (JSONException exception) {
+
+                                        }
+
                                     } catch (ParseException e2) {
                                         e2.printStackTrace();
                                     }
@@ -222,7 +236,7 @@ public class MainActivity extends ActionBarActivity {
                         }
 
                         if (!hasValidRoute)
-                            Toast.makeText(MainActivity.this, "Not a valid route.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Invalid or inactive route.", Toast.LENGTH_SHORT).show();
                     }
                 });
 
