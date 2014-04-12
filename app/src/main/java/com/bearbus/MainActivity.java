@@ -231,13 +231,10 @@ public class MainActivity extends ActionBarActivity {
 
                                         JSONArray operationTime = object.getJSONArray("time");
 
-//                                        try {
+                                        try {
 
-//                                            boolean beforeStartTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < operationTime.getDouble(0);
-//                                            boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-
-                                            boolean beforeStartTime = false;
-                                            boolean afterEndTime = false;
+                                            boolean beforeStartTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < operationTime.getDouble(0);
+                                            boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
 
                                             if (beforeStartTime || afterEndTime) {
                                                 Toast.makeText(MainActivity.this, "Inactive route", Toast.LENGTH_SHORT).show();
@@ -249,9 +246,9 @@ public class MainActivity extends ActionBarActivity {
                                                 break;
                                             }
 
-//                                        } catch (JSONException exception) {
-//
-//                                        }
+                                        } catch (JSONException exception) {
+
+                                        }
 
                                     } catch (ParseException e2) {
                                         e2.printStackTrace();
