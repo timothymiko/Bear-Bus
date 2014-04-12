@@ -25,6 +25,8 @@ public class ParseApplication extends Application {
     public static ArrayList<BusStop> stops = new ArrayList<BusStop>(); // Array of stops
     public static ArrayList<String> stopTitles = new ArrayList<String>(); // Array of stop titles
 
+    public static boolean isInForeground = true;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -38,6 +40,7 @@ public class ParseApplication extends Application {
 
         // If you would like all objects to be private by default, remove this line.
         defaultACL.setPublicReadAccess(true);
+        defaultACL.setPublicWriteAccess(true);
 
         ParseACL.setDefaultACL(defaultACL, true);
 

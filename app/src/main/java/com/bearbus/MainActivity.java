@@ -1,6 +1,15 @@
 package com.bearbus;
 
+import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +33,7 @@ import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.PushService;
+import com.parse.SaveCallback;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,6 +41,8 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -45,10 +57,16 @@ public class MainActivity extends ActionBarActivity {
     private BusStop pickupLocation;
     private BusStop dropoffLocation;
 
+    private Handler mHandler;
+    private static final int REQUEST_OK = 1;
+    private static final int REQUEST_DENIED = -1;
+    private final long[] vibrationPattern = {100l};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mHandler = new Handler();
 
         // Get a handle to the Map Fragment
         map = ((SupportMapFragment) getSupportFragmentManager()
@@ -88,6 +106,7 @@ public class MainActivity extends ActionBarActivity {
                         map.addMarker(new MarkerOptions()
                                 .position(new LatLng(location.getLatitude(), location.getLongitude()))
                                 .title(bus.name));
+
                     }
 
                     pickupSpinner = (Spinner) findViewById(R.id.pspinner);
@@ -212,21 +231,27 @@ public class MainActivity extends ActionBarActivity {
 
                                         JSONArray operationTime = object.getJSONArray("time");
 
-                                        try {
+//                                        try {
 
-                                            boolean beforeStartTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < operationTime.getDouble(0);
-                                            boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+//                                            boolean beforeStartTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < operationTime.getDouble(0);
+//                                            boolean afterEndTime = operationTime.getDouble(1) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+
+                                            boolean beforeStartTime = false;
+                                            boolean afterEndTime = false;
 
                                             if (beforeStartTime || afterEndTime) {
                                                 Toast.makeText(MainActivity.this, "Inactive route", Toast.LENGTH_SHORT).show();
                                             } else {
+
+                                                submitRequestToBus(selectedBus.id);
+
                                                 Toast.makeText(MainActivity.this, "Selected Bus: " + selectedBus.name, Toast.LENGTH_SHORT).show();
                                                 break;
                                             }
 
-                                        } catch (JSONException exception) {
-
-                                        }
+//                                        } catch (JSONException exception) {
+//
+//                                        }
 
                                     } catch (ParseException e2) {
                                         e2.printStackTrace();
@@ -242,5 +267,173 @@ public class MainActivity extends ActionBarActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ParseApplication.isInForeground = true;
+    }
+
+    private void submitRequestToBus(String identifier) {
+
+        final ParseObject request = new ParseObject("Request");
+        request.put("dropoffLocation", dropoffLocation.id);
+        request.put("pickupLocation", pickupLocation.id);
+        request.put("targetBusID", identifier);
+
+        request.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e == null) {
+
+                    final Timer timer = new Timer();
+                    timer.scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+
+                            ParseQuery query = ParseQuery.getQuery("Request");
+                            try {
+
+                                ParseObject requestObject = query.get(request.getObjectId());
+                                int status = requestObject.getInt("status");
+
+                                if (status == REQUEST_OK) {
+
+                                    if (ParseApplication.isInForeground) {
+                                        showSuccessDialog();
+                                    } else {
+                                        sendSuccessNotification();
+                                    }
+
+                                    timer.cancel();
+                                    timer.purge();
+
+                                } else if (status == REQUEST_DENIED) {
+                                    if (ParseApplication.isInForeground) {
+                                        showDeniedDialog();
+                                    } else {
+                                        sendDeniedNotification();
+                                    }
+
+                                    timer.cancel();
+                                    timer.purge();
+                                }
+
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    }, 0, 2500);
+
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ParseApplication.isInForeground = false;
+    }
+
+    private void showSuccessDialog() {
+        mHandler.post(sucessDialogRunnable);
+    }
+
+    final Runnable sucessDialogRunnable = new Runnable() {
+        @Override
+        public void run() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Success")
+                    .setMessage("Your request has been approved for transportation from " + pickupLocation.name + " to " + dropoffLocation.name + ".")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+
+            builder.create().show();
+        }
+    };
+
+    private void sendSuccessNotification() {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(MainActivity.this)
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentTitle("Bear Bus")
+                        .setContentText("Your request has been approved.")
+                        .setAutoCancel(true);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+
+        PendingIntent resultPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        resultIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        mBuilder.setContentIntent(resultPendingIntent);
+
+        mNotificationManager.notify(1, mBuilder.build());
+
+    }
+
+    private void showDeniedDialog() {
+        mHandler.post(deniedDialogRunnable);
+    }
+
+    final Runnable deniedDialogRunnable = new Runnable() {
+        @Override
+        public void run() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Denied")
+                    .setMessage("We apologize. Your request for transportation from " + pickupLocation.name + " to " + dropoffLocation.name + " has been denied by the " + pickupLocation.name + " driver.")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+
+            builder.create().show();
+        }
+    };
+
+    private void sendDeniedNotification() {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(MainActivity.this)
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentTitle("Bear Bus")
+                        .setContentText("Your request has been denied.")
+                        .setAutoCancel(true);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+
+        PendingIntent resultPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        resultIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        mBuilder.setContentIntent(resultPendingIntent);
+
+        mNotificationManager.notify(1, mBuilder.build());
     }
 }
