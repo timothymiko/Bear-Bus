@@ -24,8 +24,10 @@ import com.bearbus.Domain.BusStop;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.parse.FindCallback;
 import com.parse.ParseException;
@@ -54,6 +56,7 @@ public class MainActivity extends ActionBarActivity {
     private final String PARSE_APP_ID = "Hr5DPwQzhmzzST1sNzME8ssu3zaDxRZgtLO10Zxk";
     private final String PARSE_CLIENT_KEY = "49AgCaNyWzaFFCgHFPgS3NK0lEjTpLNPDDYBrswX";
 
+    private Marker[] markers;
     private BusStop pickupLocation;
     private BusStop dropoffLocation;
 
@@ -61,6 +64,10 @@ public class MainActivity extends ActionBarActivity {
     private static final int REQUEST_OK = 1;
     private static final int REQUEST_DENIED = -1;
     private final long[] vibrationPattern = {100l};
+
+    private static final long BUS_UPDATE_INTERVAl = 2500l;
+
+    private Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,6 +167,55 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+
+        if (timer == null) {
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+
+                @Override
+                public void run() {
+                    try {
+
+                        ParseQuery query = ParseQuery.getQuery("Bus");
+                        List<ParseObject> results = query.find();
+
+                        if (markers == null)
+                            markers = new Marker[results.size()];
+
+                        Bus bus;
+                        ParseObject busObject;
+                        ParseGeoPoint location;
+                        for ( int i = 0; i < results.size(); i++ ) {
+                            busObject = results.get(i);
+                            location = busObject.getParseGeoPoint("location");
+//                            bus = new Bus(busObject.getObjectId(), busObject.getString("name"), location.getLatitude(), location.getLongitude(), busObject.getString("currentStop"), busObject.getString("nextStop"));
+
+//                            map.clear();
+//
+//                            map.addMarker(new MarkerOptions()
+//                                    .position(new LatLng(location.getLatitude(), location.getLongitude()))
+//                                    .title(bus.name));
+
+                            UpdateBusLocations runnable = new UpdateBusLocations();
+                            Bundle args = new Bundle();
+                            args.putInt(UpdateBusLocations.INDEX, i);
+                            args.putString(UpdateBusLocations.BUS_NAME, busObject.getString("name"));
+                            args.putDouble(UpdateBusLocations.LATITUDE, location.getLatitude());
+                            args.putDouble(UpdateBusLocations.LONGITUDE, location.getLongitude());
+                            runnable.args = args;
+
+                            mHandler.post(runnable);
+                        }
+
+
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }, 0, BUS_UPDATE_INTERVAl);
+        }
 
 
         PushService.setDefaultPushCallback(this, MainActivity.class);
@@ -432,5 +488,32 @@ public class MainActivity extends ActionBarActivity {
         mBuilder.setContentIntent(resultPendingIntent);
 
         mNotificationManager.notify(1, mBuilder.build());
+    }
+
+    private class UpdateBusLocations implements Runnable {
+
+        public static final String INDEX = "index";
+        public static final String LATITUDE = "latitude";
+        public static final String LONGITUDE = "longitude";
+        public static final String BUS_NAME = "bus";
+
+        public Bundle args;
+
+        @Override
+        public void run() {
+            Log.d("UpdateBusLocations", "Updating map location of " + args.getString(BUS_NAME));
+
+            if (args != null) {
+
+                if (markers[args.getInt(INDEX)] == null) {
+                    markers[args.getInt(INDEX)] = map.addMarker(new MarkerOptions()
+                            .position(new LatLng(args.getDouble(LATITUDE), args.getDouble(LONGITUDE)))
+                            .title(args.getString(BUS_NAME))
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                } else {
+                    markers[args.getInt(INDEX)].setPosition(new LatLng(args.getDouble(LATITUDE), args.getDouble(LONGITUDE)));
+                }
+            }
+        }
     }
 }
